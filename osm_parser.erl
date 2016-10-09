@@ -10,10 +10,12 @@
          show/1
         ]).
 
+% Init the XML processing
 show(Infilename) ->
     {Doc, _Misc} = xmerl_scan:file(Infilename),
     init(Doc).
 
+% read the OSM tag and extract all children
 init(Node) ->
     case Node of
         #xmlElement{name=Name, attributes=Attributes, content=Content} ->
@@ -60,9 +62,20 @@ extract_node(Node) ->
 		way -> 
 			
 			Id = get_way_id(Attributes),
+
+			IsHighway = get_is_highway(Content), 
+
+			case IsHighway of
+	
+				true -> 
 			
-            		List = children(Content , []),
-			[ { Id , List } ];
+            				List = children(Content , []),
+					[ { Id , List } ];
+
+				false ->
+
+					ok
+			end;
 
 		_ ->
 			ok
@@ -101,6 +114,11 @@ extract_children(Node) ->
 			List = get_attributes(Attributes , []),
 			[ { Name , List } ];
 
+		nd -> 
+
+			List = get_attributes(Attributes , []),
+			[ { Name , List } ];
+
 		_ -> ok
 
 	    end;
@@ -131,3 +149,48 @@ get_way_id([Attribute | MoreAttributes]) ->
 		get_way_id(MoreAttributes)
     end.
 
+
+get_is_highway([]) ->
+    false;
+
+get_is_highway([Node | MoreNodes]) ->
+    Element = extract_children(Node),
+    case Element of
+
+	ok ->
+    		
+		get_is_highway(MoreNodes);
+
+	_ ->
+        	#xmlElement{name=Name, attributes=Attributes, content=Content} = Node,
+
+		IsHighway = get_is_highway_attributes(Attributes),
+
+		case IsHighway of
+			true -> 
+			
+            			IsHighway;
+
+			false ->
+
+				get_is_highway(MoreNodes)
+		end
+
+    end.
+
+
+get_is_highway_attributes([]) ->
+    false;
+
+get_is_highway_attributes([Attribute | MoreAttributes]) ->
+    #xmlAttribute{value=Value} = Attribute,
+    case Value of 
+
+	"highway" -> 
+				
+		true;
+
+	_ ->
+
+		get_is_highway_attributes(MoreAttributes)
+    end.
