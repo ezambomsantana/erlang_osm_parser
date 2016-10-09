@@ -12,34 +12,64 @@
 
 show(Infilename) ->
     {Doc, _Misc} = xmerl_scan:file(Infilename),
-    show_node(Doc),
-    ok.
+    init(Doc).
+
+init(Node) ->
+    case Node of
+        #xmlElement{name=Name, attributes=Attributes, content=Content} ->
+            
+	    case Name of
+		
+		osm -> 
+
+			List = osm(Content , []),
+			[ { Name , List } ];
+
+		_ -> ok
+
+	    end;
+            _ -> ok
+    end.
+
+osm([], List) ->
+    List;
+
+osm([Node | MoreNodes], List) ->
+    Element = extract_node(Node),
+    case Element of
+
+	ok ->
+    		
+		osm(MoreNodes , List);
+
+	_ ->
+		NewList = List ++ Element,
+		osm(MoreNodes , NewList)
+
+    end.
 
 %
 % Show a node/element and then the children of that node.
-show_node(Node) ->
+extract_node(Node) ->
+
     case Node of
         #xmlElement{name=Name, attributes=Attributes, content=Content} ->
             
 	    case Name of
 		
 		way -> 
-
-			io:format("name: ~s~n", [ Name ]),
+			
+			Id = get_way_id(Attributes),
+			
             		List = children(Content , []),
-			print_node(List);
+			[ { Id , List } ];
+
 		_ ->
-            		show_children(Content)
+			ok
 	    end;
 
             _ -> ok
     end.
-
-show_children([]) ->
-    ok;
-show_children([Node | MoreNodes]) ->
-    show_node(Node),
-    show_children(MoreNodes).
 
 children([], List) ->
     List;
@@ -85,18 +115,19 @@ get_attributes([Attribute | MoreAttributes], List) ->
     NewList = List ++ [ { Name, Value } ],
     get_attributes(MoreAttributes , NewList).
 
-print_node([]) ->
-	ok;
+get_way_id([]) ->
+    not_found;
 
-print_node([Element | MoreElements]) ->
-	io:format("name: ~s~n", [element(1, Element)]),
-	print_attribute(element(2,Element)),
-	print_node(MoreElements).
+get_way_id([Attribute | MoreAttributes]) ->
+    #xmlAttribute{name=Name, value=Value} = Attribute,
+    case Name of 
 
-print_attribute([]) ->
-	ok;
+	id -> 
+		
+		list_to_atom(Value);
 
-print_attribute([Element | MoreElements]) ->
-	io:format("atribute: ~s~n", [element(1, Element)]),
-	io:format("atribute-value: ~s~n", [element(2, Element)]),
-	print_attribute(MoreElements).
+	_ ->
+
+		get_way_id(MoreAttributes)
+    end.
+
