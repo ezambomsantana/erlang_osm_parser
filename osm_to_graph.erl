@@ -23,6 +23,7 @@ init(Infilename) ->
   %  print_node(ListOsm),	
     Graph.
 
+% create the vertices and the edges from the list of osm ways
 create_graph(ListWay, Graph) ->
 
     create_vertex(Graph , ListWay),
@@ -30,18 +31,17 @@ create_graph(ListWay, Graph) ->
     create_edges(Graph , ListWay , ListWay).
 
 
+% iterate over the list of ways to create the vertices
 create_vertex(_Graph , []) ->
 	ok;
 
 create_vertex(Graph , [Element | MoreElements]) ->
 	Name = element(1, Element),
 	digraph:add_vertex(Graph, Name),
+        io:format("Vertex Name: ~w~n", [ Name  ]),
 	create_vertex(Graph , MoreElements).
 
-
-
-
-% all vertex
+% iterate over the list of ways to create the edges where the vertex is the origin
 create_edges(_Graph , [], _List) ->
 	ok;
 
@@ -52,7 +52,7 @@ create_edges(Graph , [Element | MoreElements], List) ->
 	create_edges(Graph , MoreElements, List).
 
 
-% all nds
+% find all nodes to all vertices
 create_edges_vertex(_Graph , _NameVertex ,  [] , _List) ->
 	ok;
 
@@ -75,7 +75,7 @@ create_edges_vertex(Graph , NameVertex , [Element | MoreElements] , List) ->
 	end.
 
 
-% all attributes
+% get the id of the nodes
 create_edges_for_vertex(_Graph , _NameVertex , [] , _List) ->
 	ok;
 
@@ -87,7 +87,7 @@ create_edges_for_vertex(Graph , NameVertex , [ Node | MoreNodes ] , List) ->
 
 
 
-% all nds destination
+% iterate over all the possible destinations of a vertex
 verify_child_destination(_Graph , _NameVertex , _Node , []) ->
 	ok;
 
@@ -100,7 +100,6 @@ verify_child_destination(Graph , NameVertex , Node , [Element | MoreElements]) -
 
 		NameDestination -> 
 			
-			io:format("nomes iguais: ~s~n", [ NameDestination  ]),	
 			verify_child_destination( Graph , NameVertex , Node , MoreElements);
 
 		_ ->
@@ -110,9 +109,7 @@ verify_child_destination(Graph , NameVertex , Node , [Element | MoreElements]) -
 	end.
 
 	
-
-
-% all attributes_destination
+% get all the nodes from the destination
 verify_child_attribute_destination(_Graph , _NameVertex , _NameDestination , _Node , []) ->
 	ok;
 
@@ -125,7 +122,8 @@ verify_child_attribute_destination(Graph , NameVertex , NameDestination , Node ,
 	verify_child_attribute_destination( Graph , NameVertex , NameDestination , Node , MoreElements).
 
 
-% compare all
+% comparethe id of the origin node and the id of the destination node
+% if it is equal, then exists an edge between the two vertices
 verify_child_origin( _Graph , _Node , _NameVertex , _NameDestination , []) ->
 	ok;
 
@@ -136,16 +134,11 @@ verify_child_origin( Graph , Node , NameVertex , NameDestination , [Element | Mo
     case IdNodeOrigin of
 
 	IdNodeDestin ->
-   
-   		io:format("bateu: ~s~n", [ IdNodeDestin  ]),	
-   		io:format("orgin: ~s~n", [ NameVertex  ]),
-   		io:format("destination: ~s~n", [ NameDestination  ]),
 
 		V1 = digraph:vertex(Graph, NameVertex),
 		V2 = digraph:vertex(Graph, NameDestination),
 
-   		io:format("v1: ~w~n", [ V1  ]),
-		digraph:add_edge(Graph, V1, V2),
+		digraph:add_edge(Graph, element(1 , V1), element(1 , V2)),
     		
 		true;
 
