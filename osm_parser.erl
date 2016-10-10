@@ -25,7 +25,7 @@ init(Node) ->
 		osm -> 
 
 			List = osm(Content , []),
-			[ { Name , List } ];
+			List;
 
 		_ -> ok
 
@@ -194,3 +194,5 @@ get_is_highway_attributes([Attribute | MoreAttributes]) ->
 
 		get_is_highway_attributes(MoreAttributes)
     end.
+
+
