@@ -15,12 +15,11 @@ init(Infilename) ->
 
     ListOsm = osm_parser:show(Infilename),
     Graph = digraph:new(),
-    io:format("num Vertix: ~w~n", [ digraph:no_vertices(Graph)  ]),	
-    io:format("num Edge: ~w~n", [ digraph:no_edges(Graph)  ]),	
     create_graph(ListOsm, Graph),
     io:format("num Vertix: ~w~n", [ digraph:no_vertices(Graph) ]),
     io:format("num Edge: ~w~n", [ digraph:no_edges(Graph)  ]),	
   %  print_node(ListOsm),	
+    print_graph(Graph),
     Graph.
 
 % create the vertices and the edges from the list of osm ways
@@ -38,7 +37,6 @@ create_vertex(_Graph , []) ->
 create_vertex(Graph , [Element | MoreElements]) ->
 	Name = element(1, Element),
 	digraph:add_vertex(Graph, Name),
-        io:format("Vertex Name: ~w~n", [ Name  ]),
 	create_vertex(Graph , MoreElements).
 
 % iterate over the list of ways to create the edges where the vertex is the origin
@@ -172,3 +170,32 @@ print_attribute([Element | MoreElements]) ->
 	io:format("atribute: ~s~n", [element(1, Element)]),
 	io:format("atribute-value: ~s~n", [element(2, Element)]),
 	print_attribute(MoreElements).
+
+
+print_graph( Graph ) ->
+	
+	Vertices = digraph:vertices( Graph ),
+	Edges = digraph:edges( Graph ),
+
+	print_vertices( Vertices ),
+	print_edges( Graph , Edges ).
+
+
+
+print_vertices([]) ->
+	ok;
+
+print_vertices([Element | MoreElements]) ->
+	io:format("name: ~s~n", [ Element ]),
+	print_vertices(MoreElements).
+
+
+
+print_edges(_Graph , []) ->
+	ok;
+
+print_edges(Graph, [Element | MoreElements]) ->
+	Edge = digraph:edge(Graph, Element),
+	io:format("vInicio: ~s~n", [ element( 2 , Edge ) ]),
+	io:format("vFim: ~s~n", [ element( 3 , Edge) ]),
+	print_edges( Graph , MoreElements).
