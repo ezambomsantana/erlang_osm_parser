@@ -8,18 +8,34 @@
 % osm_to_graphr:init("map.osm").
 
 -export([
-         init/1
+         init/2
         ]).
 
-init(Infilename) ->
+init( Infilename , GenerateOutput ) ->
 
     ListOsm = osm_parser:show(Infilename),
+	io:format("vInicio: ~w~n", [ ListOsm  ]),
     Graph = digraph:new(),
     create_graph(ListOsm, Graph),
-    io:format("num Vertix: ~w~n", [ digraph:no_vertices(Graph) ]),
-    io:format("num Edge: ~w~n", [ digraph:no_edges(Graph)  ]),	
-  %  print_node(ListOsm),	
-    print_graph(Graph),
+
+
+
+    case GenerateOutput of
+
+	true -> 		
+		
+		Filename = "/home/eduardo/map_output.xml",
+		{ ok , InitFile } = file:open( Filename, [ write ] ),
+		file:write( InitFile, "<network>"),
+
+		print_graph(Graph , InitFile ),
+
+		file:write( InitFile, "</network>"),
+		file:close( InitFile );
+
+	false ->
+		ok
+    end,
     Graph.
 
 % create the vertices and the edges from the list of osm ways
@@ -172,30 +188,38 @@ print_attribute([Element | MoreElements]) ->
 	print_attribute(MoreElements).
 
 
-print_graph( Graph ) ->
+print_graph( Graph , File ) ->
 	
 	Vertices = digraph:vertices( Graph ),
 	Edges = digraph:edges( Graph ),
 
-	print_vertices( Vertices ),
-	print_edges( Graph , Edges ).
+	file:write( File, "<nodes>"),
+	print_vertices( Vertices , File ),
+	file:write( File, "</nodes>"),
+	file:write( File, "<links>"),
+	print_edges( Graph , Edges , File ),
+	file:write( File, "</links>").
 
 
 
-print_vertices([]) ->
+print_vertices([] , _File) ->
 	ok;
 
-print_vertices([Element | MoreElements]) ->
+print_vertices([Element | MoreElements] , File) ->
 	io:format("name: ~s~n", [ Element ]),
-	print_vertices(MoreElements).
+	Text = io_lib:format( "<node id=\"~w\"/>\n", [ Element ] ),
+	file:write( File, Text ),
+	print_vertices(MoreElements , File).
 
 
 
-print_edges(_Graph , []) ->
+print_edges(_Graph , [] , _File) ->
 	ok;
 
-print_edges(Graph, [Element | MoreElements]) ->
+print_edges(Graph, [Element | MoreElements] , File) ->
 	Edge = digraph:edge(Graph, Element),
 	io:format("vInicio: ~s~n", [ element( 2 , Edge ) ]),
 	io:format("vFim: ~s~n", [ element( 3 , Edge) ]),
-	print_edges( Graph , MoreElements).
+	Text = io_lib:format( "<link from=\"~w\" to=\"~w\"  length=\"300.0\" freespeed=\"15.0\" capacity=\"1800.0\" permlanes=\"1.0\" oneway=\"1\" modes=\"car\"    />\n", [ element( 2 , Edge ) , element( 3 , Edge ) ] ),
+	file:write( File, Text ),
+	print_edges( Graph , MoreElements , File).
